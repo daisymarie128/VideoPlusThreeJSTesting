@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<title>three.js css3d - youtube</title>
+	</head>
+	<body>
+		<link href="stylesheets/index.css" rel="stylesheet" type="text/css">
+		<script src="javascripts/three.min.js"></script>
+		<script src="javascripts/tween.min.js"></script>
+		<script src="javascripts/CSS3DRenderer.js"></script>
+		<script src="javascripts/jquery-1.11.0.min.js"></script>
+		<script src="javascripts/OrbitControls.js"></script>
+		<script src="javascripts/main.js"></script>
+
+		<div id="container"></div>
+		<div id="search"><input id="query" type="text" value="operahouse"><button id="button">search</button></div>
+
+
+
+		<script>
+
+			function lines(getTimeDomain, getFrequencies) {
+				// var camera;
+				var lines = []; //Global array for animated elements
+				var lines2 = []; //Global array for animated elements
+				// colors = [[255,0,0],[255,230,255],[255,0,213]];
+				// Set up the scene, camera, and renderer as global variables.
+				var attribs = {
+					lineWidth: .2,
+					speedX: 0.1,
+					speedY: -0.2,
+					speedZ: 1,
+					backgroundColorController: 0x000000,
+					currentAnimationId: null
+				}
+
+				var camera, scene, renderer;
+				var player;
+
+				var auto = true;
+
+				
+
+				var dom = document.createElement( 'div' );
+				dom.style.width = '480px';
+				dom.style.height = '360px';
+
+				var object = new THREE.CSS3DObject( dom );
+				object.position.x = Math.random() * 4000 - 2000;
+				// object.position.y = Math.random() * 2000 - 1000;
+				object.position.y = 3000;
+				object.position.z = Math.random() * - 5000;
+
+				player = document.createElement( 'iframe' );
+				player.style.position = 'absolute';
+				player.style.width = '480px';
+				player.style.height = '360px';
+				player.style.border = '0px';
+				player.src = 'http://www.youtube.com/embed/' + entry.id.$t.split( ':' ).pop() + '?rel=0&autoplay=1&controls=1&showinfo=0';
+				dom.appendChild( player );
+				
+
+			  // Sets up the scene.
+				function init() {
+
+
+					scene = new THREE.Scene();
+
+					renderer = new THREE.CSS3DRenderer();
+					renderer.setSize( window.innerWidth, window.innerHeight );
+					renderer.domElement.style.position = 'absolute';
+					renderer.domElement.style.top = 0;
+					controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+			    	var mesh;
+
+				    // Create a renderer and add it to the DOM.
+				    // renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+				    element = renderer.domElement;
+				    renderer.shadowMapEnabled = true; //Needs to be enabled for shadows
+				    effect = new THREE.StereoEffect(renderer);
+				    effect.setSize(window.innerWidth, window.innerHeight);
+					document.getElementById( 'container' ).appendChild( renderer.domElement );
+
+				    camera = new THREE.PerspectiveCamera(50, WIDTH / HEIGHT, 0.1, 20000);
+				    //.PerspectiveCamera (zoom, )
+				    camera.position.set(281.5454554532732, 10.717505604326544, 9.709799474934318);
+				    scene.add(camera);
+				    renderer.setClearColor( attribs.backgroundColorController, 0 ); // the default
+
+				    // Create an event listener that resizes the renderer with the browser window.
+				    $(window).on('resize', function() {
+				      var WIDTH = window.innerWidth,
+				          HEIGHT = window.innerHeight;
+				      renderer.setSize(WIDTH, HEIGHT);
+				      camera.aspect = WIDTH / HEIGHT;
+				      camera.updateProjectionMatrix();
+				    });
+
+				    // Add OrbitControls so that we can pan around with the mouse.
+				    controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+
+				    //making the light factory
+				    var lightFactory = function(x,y,z) {
+				      var light = new THREE.SpotLight(0xfffff);
+				      light.position.set(x,y,z);
+				      light.castShadow = true;
+				      // scene.add(light);
+				      scene.add( new Element( light ) );
+				      return light;
+				    }
+
+				    // Create a light
+				    // var light1 = lightFactory(0,100,0);
+				    // var light2 = lightFactory(100,0,0);
+				    var light3 = lightFactory( 0,100,100);
+				    // var light3 = lightFactory( 0,0,0);
+
+				    var light = new THREE.HemisphereLight(0xfffff, 0xfffff, .5);
+				    scene.add(light);
+				}
+					
+					// Vertices builder x,y,z where y amplitude passed in from frequency
+					var verticesFactory = function(x, y) {
+						var vertex = new THREE.Vector3(x, y, -100)
+						return vertex;
+					}
+
+					var lineFactory = function(r, g, b, vertexArray) {
+						var lineMaterial = new THREE.LineBasicMaterial({
+							// color: "rgb("+r+","+g+","+b+")"
+							color: "rgb("+r+","+g+","+b+")",
+							linewidth: attribs.lineWidth
+					});
+						// console.log(lineMaterial);
+						var lineGeometry = new THREE.Geometry();
+						lineGeometry.vertices = vertexArray;
+
+						var line = new THREE.Line( lineGeometry, lineMaterial );
+						scene.add( line );
+						scene.add( new Element( line ) );
+						lines.push(line);
+
+						return line;
+					}
+
+
+
+					// Get data
+					var getData = function() {
+					//lineFactory build at intervals
+					var freqPoints = [];
+					var freqArray = getTimeDomain();
+					var freqData = getFrequencies();
+					var average = _.reduce(freqData, function (memo, num) {return memo + num}, 0)/freqData.length*2;
+					// Get data and build vertices
+					for (var i = 0; i < freqArray.length; i++) {
+					  var amplitude = freqArray[i]/8;
+					  //Don't understand how this is making the default animation change before song starts
+					  var freqPoint = verticesFactory((i-(freqArray.length)/2)*2, amplitude);
+					  freqPoints.push(freqPoint);
+					};
+
+
+					lineFactory(random0255(), random0255(), random0255(),freqPoints);
+					}
+
+					var cameraCheck = function (){
+					}
+
+				// Renders the scene and updates the render as needed.
+					function animate() {
+
+						renderer.setClearColor( attribs.backgroundColorController, 0 ); // the default
+						getData();
+						attribs.currentAnimationId = requestAnimationFrame(animate);
+						// renderer.render(scene, camera);
+						controls.update();
+						cameraCheck();
+
+						effect.render(scene, camera);
+
+						// lines movement
+						for ( var i = 0; i< lines.length; i++){
+						  var line = lines[i];
+						  line.position.x += attribs.speedX;
+						  line.position.y += attribs.speedY;
+						  line.position.z += attribs.speedZ;
+						  // line.position.y += -0.1;
+						}
+
+
+						if(lines.length > 300){
+						  lastLine = lines.shift();
+						  scene.remove(lastLine);
+						}
+
+					}
+
+					function random0255() {
+						// console.log("doing");
+						return _.random(0,255);
+						// return parseInt(result);
+					}
+
+
+					function randomColors() {
+						return colors.sort( function() { return 0.4 - Math.random() } );
+						// return parseInt(result);
+					}
+
+			  init();
+			  // backgroundColor = 0xFFFFFFF
+			  animate();
+			  currentVisualiser = attribs;
+			}
+	
+		</script>
+	</body>
+</html>
